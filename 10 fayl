@@ -1,0 +1,88 @@
+import tkinter as tk
+from tkinter import messagebox
+from datetime import datetime
+import openai
+
+# Sun'iy intellekt API kaliti (OpenAI API kalitingizni qo'shing)
+openai.api_key = "YOUR_API_KEY"
+
+# Mahsulotlar ro'yxati
+products = [
+    {"name": "Olma", "expiry_date": "2024-11-30", "note": "Olmalarni konservalash uchun ularni tozalab, mayda bo'laklarga kesing. Sterillangan bankalarda saqlang."},
+    {"name": "Gilos", "expiry_date": "2024-12-10", "note": "Gilosni shakar bilan qaynating va sovutib, steril idishda saqlang. Sovuq joyda turing."},
+    {"name": "Nok", "expiry_date": "2024-11-25", "note": "Noklarni sirop bilan konservalang va maxsus muhrlangan idishlarda saqlang."},
+    {"name": "Anor", "expiry_date": "2024-12-05", "note": "Anor sharbati tayyorlash va muzlatish tavsiya etiladi."},
+]
+
+# Sun'iy intellektdan javob olish funksiyasi
+def ask_ai(question):
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": question}]
+        )
+        return response.choices[0].message["content"].strip()
+    except Exception as e:
+        return "Sun'iy intellekt bilan bog'lanishda xatolik yuz berdi."
+
+# Mahsulotlarni tekshirish funksiyasi
+def check_products():
+    today = datetime.now().date()
+    result = ""
+    for product in products:
+        name = product["name"]
+        expiry_date = datetime.strptime(product["expiry_date"], "%Y-%m-%d").date()
+        note = product["note"]
+
+        # Muddat tugashini tekshirish
+        if expiry_date < today:
+            result += f"⚠️ {name} yaroqlilik muddati tugagan! (Tugash sanasi: {expiry_date})\n"
+        elif (expiry_date - today).days <= 3:
+            result += f"⚠️ {name} yaqin kunlarda tugaydi! (Tugash sanasi: {expiry_date})\n"
+        else:
+            result += f"✅ {name} xavfsiz. (Tugash sanasi: {expiry_date})\n"
+        
+        # Konservalash bo'yicha eslatma
+        result += f"📌 {name} konservalash bo'yicha maslahat: {note}\n\n"
+    
+    messagebox.showinfo("Mahsulot xavfsizligi", result)
+
+# Foydalanuvchi savolini qabul qilish funksiyasi
+def ask_question():
+    question = question_entry.get()
+    if question.strip() == "":
+        messagebox.showwarning("Xatolik", "Savol kiritishingiz kerak!")
+        return
+    response = ask_ai(question)
+    messagebox.showinfo("Sun'iy intellekt javobi", response)
+
+# Tkinter interfeysi
+root = tk.Tk()
+root.title("Oziq-ovqat xavfsizligi va konservalash")
+root.geometry("600x400")
+root.configure(bg="#f0f8ff")
+
+# Sarlavha
+title_label = tk.Label(root, text="🍎 Oziq-ovqat xavfsizligi va konservalash 🛡️", font=("Arial", 16, "bold"), bg="#f0f8ff", fg="#333")
+title_label.pack(pady=10)
+
+# Mahsulotlarni tekshirish tugmasi
+check_button = tk.Button(root, text="Mahsulotlarni tekshirish", font=("Arial", 14), bg="#4caf50", fg="white", command=check_products)
+check_button.pack(pady=10)
+
+# Foydalanuvchi savoli uchun matn qutisi
+question_label = tk.Label(root, text="Sun'iy intellektga savol bering:", font=("Arial", 12), bg="#f0f8ff", fg="#333")
+question_label.pack(pady=5)
+question_entry = tk.Entry(root, font=("Arial", 14), width=50)
+question_entry.pack(pady=5)
+
+# Sun'iy intellektga savol berish tugmasi
+ask_button = tk.Button(root, text="Savol berish", font=("Arial", 14), bg="#2196f3", fg="white", command=ask_question)
+ask_button.pack(pady=10)
+
+# Chiqish tugmasi
+exit_button = tk.Button(root, text="Dasturdan chiqish", font=("Arial", 12), bg="#f44336", fg="white", command=root.quit)
+exit_button.pack(pady=20)
+
+# Dastur ishga tushishi
+root.mainloop()
